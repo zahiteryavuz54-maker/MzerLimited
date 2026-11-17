@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yönetim Paneli - MizerLimited</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body class="admin-body">
   <div id="admin-alert" class="alert" style="display:none; position:fixed; top:20px; right:20px; z-index:999; min-width:280px;"></div>
@@ -40,12 +40,14 @@
         <li><a href="#" data-section="settings">Ayarlar</a></li>
         <li><a href="#" data-section="password">Şifre Değiştir</a></li>
         <li><a href="#" data-section="data">Veri Yedekle</a></li>
+        <li><a href="#" data-section="github">GitHub Bağlantısı</a></li>
         <li><a href="index.html" style="margin-top:20px; color:var(--text-muted);">← Siteye Dön</a></li>
         <li><a href="#" onclick="logout()" style="color:var(--danger);">Çıkış Yap</a></li>
       </ul>
     </aside>
 
     <div class="admin-content">
+      <div id="publish-status" class="alert" style="display:none; margin-bottom:16px;"></div>
       <!-- Dashboard -->
       <section id="section-dashboard" class="admin-section active">
         <div class="admin-header">
@@ -305,6 +307,45 @@
         </div>
       </section>
 
+      <!-- GitHub -->
+      <section id="section-github" class="admin-section">
+        <div class="admin-header">
+          <h1>GitHub Bağlantısı <span id="gh-state" style="font-size:0.9rem;"></span></h1>
+        </div>
+        <div class="admin-card" style="max-width:560px;">
+          <p style="margin-bottom:16px; color:var(--text-muted);">
+            Panelde yaptığın her değişiklik, bu bağlantı sayesinde otomatik olarak GitHub'daki
+            <b>default-data.json</b> dosyasına yazılır ve herkes görür. Token sadece bu tarayıcıda saklanır, siteye veya repoya yazılmaz.
+          </p>
+          <form id="github-form">
+            <div class="form-group">
+              <label>GitHub Kullanıcı Adı</label>
+              <input type="text" id="gh-owner" required>
+            </div>
+            <div class="form-group">
+              <label>Repo Adı</label>
+              <input type="text" id="gh-repo" required>
+            </div>
+            <div class="form-group">
+              <label>Branch</label>
+              <input type="text" id="gh-branch" value="main" required>
+            </div>
+            <div class="form-group">
+              <label>Token (Fine-grained, Contents: Read and write)</label>
+              <input type="password" id="gh-token" required autocomplete="off">
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button type="submit" class="btn btn-primary">Bağlan</button>
+              <button type="button" class="btn btn-secondary" onclick="disconnectGithub()">Bağlantıyı Kaldır</button>
+            </div>
+          </form>
+          <p style="margin-top:20px; color:var(--text-muted); font-size:0.9rem;">
+            <b>Token nasıl alınır:</b> GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token →
+            "Only select repositories" ile sadece bu repoyu seç → Repository permissions → <b>Contents: Read and write</b> → Generate. Çıkan kodu yukarıya yapıştır.
+          </p>
+        </div>
+      </section>
+
       <!-- Data -->
       <section id="section-data" class="admin-section">
         <div class="admin-header">
@@ -326,9 +367,9 @@
     </div>
   </div>
 
-  <script src="js/i18n.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/admin.js"></script>
+  <script src="i18n.js"></script>
+  <script src="main.js"></script>
+  <script src="admin.js"></script>
   <script>
     initAdmin();
   </script>

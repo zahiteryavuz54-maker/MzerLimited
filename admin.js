@@ -4,14 +4,176 @@ function isLoggedIn() {
   return sessionStorage.getItem('mizer_admin') === 'true';
 }
 
-function login(email, password) {
+async function hashPassword(email, password) {
+  const buf = await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode('mizer:' + email.toLowerCase() + ':' + password));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function login(email, password) {
   const data = getData();
   if (!data || !data.admin) return false;
-  if (email === data.admin.email && password === data.admin.password) {
-    sessionStorage.setItem('mizer_admin', 'true');
-    return true;
+  if (email !== data.admin.email) return false;
+  let ok = false;
+  if (data.admin.passwordHash) {
+    ok = (await hashPassword(email, password)) === data.admin.passwordHash;
+  } else {
+    ok = password === data.admin.password;
   }
-  return false;
+  if (ok) sessionStorage.setItem('mizer_admin', 'true');
+  return ok;
+}
+
+// ===== GitHub Yayınlama =====
+const GH_KEY = 'mizer_gh';
+const GH_FILE = 'default-data.json';
+let ghSha = null;
+let ghQueue = Promise.resolve();
+
+function ghConfig() {
+  try { return JSON.parse(localStorage.getItem(GH_KEY)) || null; } catch (e) { return null; }
+}
+function ghConfigured() {
+  const c = ghConfig();
+  return !!(c && c.owner && c.repo && c.token);
+}
+function ghHeaders(c) {
+  return {
+    'Accept': 'application/vnd.github+json',
+    'Authorization': 'Bearer ' + c.token,
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+function ghUrl(c) {
+  return `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${GH_FILE}`;
+}
+function b64encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin);
+}
+function b64decode(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+}
+async function ghError(res) {
+  if (res.status === 401) return 'Token geçersiz veya süresi dolmuş.';
+  if (res.status === 403) return 'Token\'ın bu repoya yazma izni yok (Contents: Read and write olmalı).';
+  if (res.status === 404) return 'Repo veya default-data.json bulunamadı (kullanıcı/repo adını ve token erişimini kontrol et).';
+  return 'GitHub hatası (' + res.status + ').';
+}
+async function ghLoad() {
+  const c = ghConfig();
+  const res = await fetch(ghUrl(c) + '?ref=' + encodeURIComponent(c.branch || 'main') + '&t=' + Date.now(),
+    { headers: ghHeaders(c), cache: 'no-store' });
+  if (!res.ok) throw new Error(await ghError(res));
+  const j = await res.json();
+  ghSha = j.sha;
+  return JSON.parse(b64decode(j.content));
+}
+async function sanitizeAdmin(data) {
+  // Düz şifre asla GitHub'a gitmesin.
+  if (data.admin && data.admin.password) {
+    data.admin.passwordHash = await hashPassword(data.admin.email, data.admin.password);
+    delete data.admin.password;
+  }
+  return data;
+}
+async function ghPush(data) {
+  const c = ghConfig();
+  data = await sanitizeAdmin(data);
+  const content = b64encode(JSON.stringify(data, null, 2));
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (!ghSha || attempt > 0) await ghLoad();
+    const res = await fetch(ghUrl(c), {
+      method: 'PUT',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders(c)),
+      body: JSON.stringify({
+        message: 'Admin panelinden güncelleme',
+        content: content,
+        sha: ghSha,
+        branch: c.branch || 'main'
+      })
+    });
+    if (res.ok) {
+      const j = await res.json();
+      ghSha = j.content.sha;
+      return;
+    }
+    if (res.status === 409 || res.status === 422) continue;
+    throw new Error(await ghError(res));
+  }
+  throw new Error('Sürüm çakışması oldu, işlemi tekrar dene.');
+}
+
+function setPublishStatus(msg, type) {
+  const el = document.getElementById('publish-status');
+  if (!el) return;
+  el.className = 'alert ' + (type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : '');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function publishData() {
+  if (!ghConfigured()) {
+    setPublishStatus('⚠ GitHub bağlı değil: bu değişiklik sitede GÖRÜNMEZ ve sayfayı yenileyince kaybolur. "GitHub Bağlantısı" bölümünden bağlan.', 'error');
+    return;
+  }
+  setPublishStatus('Yayınlanıyor...', 'info');
+  ghQueue = ghQueue
+    .then(() => ghPush(getData()))
+    .then(() => setPublishStatus('✓ Yayınlandı. Değişiklik sitede 1-2 dakika içinde görünür.', 'success'))
+    .catch(e => setPublishStatus('Yayınlanamadı: ' + e.message, 'error'));
+}
+
+function loadGithubForm() {
+  let c = ghConfig();
+  if (!c) {
+    // GitHub Pages adresinden kullanıcı ve repo adını tahmin et
+    const host = location.hostname;
+    c = { owner: '', repo: '', branch: 'main', token: '' };
+    if (host.endsWith('.github.io')) {
+      c.owner = host.split('.')[0];
+      c.repo = location.pathname.split('/')[1] || '';
+    }
+  }
+  document.getElementById('gh-owner').value = c.owner || '';
+  document.getElementById('gh-repo').value = c.repo || '';
+  document.getElementById('gh-branch').value = c.branch || 'main';
+  document.getElementById('gh-token').value = c.token || '';
+  const st = document.getElementById('gh-state');
+  if (st) st.textContent = ghConfigured() ? '✅ Bağlı' : '❌ Bağlı değil';
+}
+
+async function saveGithub(e) {
+  e.preventDefault();
+  const c = {
+    owner: document.getElementById('gh-owner').value.trim(),
+    repo: document.getElementById('gh-repo').value.trim(),
+    branch: document.getElementById('gh-branch').value.trim() || 'main',
+    token: document.getElementById('gh-token').value.trim()
+  };
+  localStorage.setItem(GH_KEY, JSON.stringify(c));
+  ghSha = null;
+  try {
+    const data = await ghLoad();
+    window.__SITE_DATA__ = data;
+    showAlert('GitHub bağlantısı başarılı!');
+    loadGithubForm();
+    renderDashboard(); renderAdminProjects(); renderAdminCategories(); renderAdminAds(); loadSettings();
+  } catch (err) {
+    localStorage.removeItem(GH_KEY);
+    showAlert('Bağlanamadı: ' + err.message, 'error');
+    loadGithubForm();
+  }
+}
+
+function disconnectGithub() {
+  localStorage.removeItem(GH_KEY);
+  ghSha = null;
+  loadGithubForm();
+  showAlert('GitHub bağlantısı kaldırıldı.');
 }
 
 function logout() {
@@ -337,14 +499,17 @@ function saveSettings(e) {
   showAlert('Ayarlar kaydedildi!');
 }
 
-function changePassword(e) {
+async function changePassword(e) {
   e.preventDefault();
   const data = getData();
   const current = document.getElementById('pass-current').value;
   const newPass = document.getElementById('pass-new').value;
   const confirm = document.getElementById('pass-confirm').value;
 
-  if (current !== data.admin.password) {
+  const currentOk = data.admin.passwordHash
+    ? (await hashPassword(data.admin.email, current)) === data.admin.passwordHash
+    : current === data.admin.password;
+  if (!currentOk) {
     showAlert('Mevcut şifre yanlış!', 'error');
     return;
   }
@@ -357,7 +522,8 @@ function changePassword(e) {
     return;
   }
 
-  data.admin.password = newPass;
+  data.admin.passwordHash = await hashPassword(data.admin.email, newPass);
+  delete data.admin.password;
   saveData(data);
   document.getElementById('password-form').reset();
   showAlert('Şifre başarıyla değiştirildi!');
@@ -396,19 +562,23 @@ function importData(e) {
 // ===== Init Admin =====
 async function initAdmin() {
   await loadDefaultData();
-  if (!getData()) {
-    const def = window.__DEFAULT_DATA__;
-    if (def) saveData(def);
+  // Admin girişliyse ve GitHub bağlıysa en güncel veriyi doğrudan GitHub'dan al
+  if (isLoggedIn() && ghConfigured()) {
+    try {
+      window.__SITE_DATA__ = await ghLoad();
+    } catch (e) {
+      setPublishStatus('GitHub verisi okunamadı: ' + e.message, 'error');
+    }
   }
 
   // Login form
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('login-email').value;
       const pass = document.getElementById('login-password').value;
-      if (login(email, pass)) {
+      if (await login(email, pass)) {
         location.reload();
       } else {
         showAlert('E-posta veya şifre hatalı!', 'error');
@@ -436,12 +606,17 @@ async function initAdmin() {
   document.getElementById('ad-form')?.addEventListener('submit', saveAd);
   document.getElementById('settings-form')?.addEventListener('submit', saveSettings);
   document.getElementById('password-form')?.addEventListener('submit', changePassword);
+  document.getElementById('github-form')?.addEventListener('submit', saveGithub);
 
   // Initial render
-  showSection('dashboard');
+  loadGithubForm();
+  showSection(ghConfigured() ? 'dashboard' : 'github');
   renderDashboard();
   renderAdminProjects();
   renderAdminCategories();
   renderAdminAds();
   loadSettings();
+  if (!ghConfigured()) {
+    setPublishStatus('⚠ GitHub bağlı değil. Değişikliklerin sitede görünmesi için "GitHub Bağlantısı" bölümünden bağlan.', 'error');
+  }
 }

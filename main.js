@@ -23,32 +23,27 @@ const LANGS = [
 ];
 
 // ===== Data Management =====
+// Her ziyaretçi sitenin güncel default-data.json dosyasını okur.
+// Böylece admin panelinden yapılan değişiklik herkese yansır.
+window.__SITE_DATA__ = null;
+
 function getData() {
-  const saved = localStorage.getItem('mizer_data');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Invalid saved data, using default');
-    }
-  }
-  // Fallback to embedded default (will be overwritten by fetch if available)
-  return window.__DEFAULT_DATA__ || null;
+  return window.__SITE_DATA__;
 }
 
 function saveData(data) {
-  localStorage.setItem('mizer_data', JSON.stringify(data));
+  window.__SITE_DATA__ = data;
+  // Admin panelinde publishData() tanımlıdır ve değişikliği GitHub'a yollar.
+  if (typeof publishData === 'function') publishData(data);
 }
 
 async function loadDefaultData() {
   try {
-    const res = await fetch('data/default-data.json');
+    const res = await fetch('default-data.json?v=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       window.__DEFAULT_DATA__ = data;
-      if (!localStorage.getItem('mizer_data')) {
-        saveData(data);
-      }
+      window.__SITE_DATA__ = data;
       return data;
     }
   } catch (e) {
@@ -158,11 +153,6 @@ function renderFooter() {
 // ===== Init common =====
 async function initCommon(activePage = '') {
   await loadDefaultData();
-  // Ensure data exists
-  if (!getData()) {
-    const def = window.__DEFAULT_DATA__;
-    if (def) saveData(def);
-  }
   renderHeader(activePage);
   renderFooter();
   renderAds();

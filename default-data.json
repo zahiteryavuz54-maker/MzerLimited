@@ -9,18 +9,67 @@
   },
   "admin": {
     "email": "mzerlimited@gmail.com",
-    "password": "ZahitZeyn2016zz"
+    "passwordHash": "aaba3d9350d220f74fca2f1f0933dc5b8ae8ae6e7453b53cc1e194681c8b8a60"
   },
   "categories": [
-    { "id": "cat1", "name": { "tr": "Araçlar", "en": "Tools", "de": "Werkzeuge", "fr": "Outils", "es": "Herramientas", "pt": "Ferramentas", "ru": "Инструменты" } },
-    { "id": "cat2", "name": { "tr": "Oyunlar", "en": "Games", "de": "Spiele", "fr": "Jeux", "es": "Juegos", "pt": "Jogos", "ru": "Игры" } },
-    { "id": "cat3", "name": { "tr": "Yardımcı", "en": "Utilities", "de": "Hilfsprogramme", "fr": "Utilitaires", "es": "Utilidades", "pt": "Utilitários", "ru": "Утилиты" } }
+    {
+      "id": "cat1",
+      "name": {
+        "tr": "Araçlar",
+        "en": "Tools",
+        "de": "Werkzeuge",
+        "fr": "Outils",
+        "es": "Herramientas",
+        "pt": "Ferramentas",
+        "ru": "Инструменты"
+      }
+    },
+    {
+      "id": "cat2",
+      "name": {
+        "tr": "Oyunlar",
+        "en": "Games",
+        "de": "Spiele",
+        "fr": "Jeux",
+        "es": "Juegos",
+        "pt": "Jogos",
+        "ru": "Игры"
+      }
+    },
+    {
+      "id": "cat3",
+      "name": {
+        "tr": "Yardımcı",
+        "en": "Utilities",
+        "de": "Hilfsprogramme",
+        "fr": "Utilitaires",
+        "es": "Utilidades",
+        "pt": "Utilitários",
+        "ru": "Утилиты"
+      }
+    }
   ],
   "projects": [
     {
       "id": "proj1",
-      "title": { "tr": "Örnek Proje 1", "en": "Sample Project 1", "de": "Beispielprojekt 1", "fr": "Projet Exemple 1", "es": "Proyecto de Ejemplo 1", "pt": "Projeto Exemplo 1", "ru": "Пример проекта 1" },
-      "description": { "tr": "Bu bir örnek proje açıklamasıdır. İndirebilir ve kullanabilirsiniz.", "en": "This is a sample project description. You can download and use it.", "de": "Dies ist eine Beispielprojektbeschreibung. Sie können es herunterladen und verwenden.", "fr": "Ceci est une description de projet exemple. Vous pouvez le télécharger et l'utiliser.", "es": "Esta es una descripción de proyecto de ejemplo. Puedes descargarlo y usarlo.", "pt": "Esta é uma descrição de projeto de exemplo. Você pode baixá-lo e usá-lo.", "ru": "Это описание примерного проекта. Вы можете скачать и использовать его." },
+      "title": {
+        "tr": "Örnek Proje 1",
+        "en": "Sample Project 1",
+        "de": "Beispielprojekt 1",
+        "fr": "Projet Exemple 1",
+        "es": "Proyecto de Ejemplo 1",
+        "pt": "Projeto Exemplo 1",
+        "ru": "Пример проекта 1"
+      },
+      "description": {
+        "tr": "Bu bir örnek proje açıklamasıdır. İndirebilir ve kullanabilirsiniz.",
+        "en": "This is a sample project description. You can download and use it.",
+        "de": "Dies ist eine Beispielprojektbeschreibung. Sie können es herunterladen und verwenden.",
+        "fr": "Ceci est une description de projet exemple. Vous pouvez le télécharger et l'utiliser.",
+        "es": "Esta es una descripción de proyecto de ejemplo. Puedes descargarlo y usarlo.",
+        "pt": "Esta é uma descrição de projeto de exemplo. Você pode baixá-lo e usá-lo.",
+        "ru": "Это описание примерного проекта. Вы можете скачать и использовать его."
+      },
       "categoryId": "cat1",
       "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=340&fit=crop",
       "videoUrl": "",
@@ -29,8 +78,24 @@
     },
     {
       "id": "proj2",
-      "title": { "tr": "Örnek Oyun", "en": "Sample Game", "de": "Beispielspiel", "fr": "Jeu Exemple", "es": "Juego de Ejemplo", "pt": "Jogo Exemplo", "ru": "Пример игры" },
-      "description": { "tr": "Eğlenceli bir örnek oyun projesi.", "en": "A fun sample game project.", "de": "Ein unterhaltsames Beispielspielprojekt.", "fr": "Un projet de jeu exemple amusant.", "es": "Un proyecto de juego de ejemplo divertido.", "pt": "Um projeto de jogo de exemplo divertido.", "ru": "Весёлый пример игрового проекта." },
+      "title": {
+        "tr": "Örnek Oyun",
+        "en": "Sample Game",
+        "de": "Beispielspiel",
+        "fr": "Jeu Exemple",
+        "es": "Juego de Ejemplo",
+        "pt": "Jogo Exemplo",
+        "ru": "Пример игры"
+      },
+      "description": {
+        "tr": "Eğlenceli bir örnek oyun projesi.",
+        "en": "A fun sample game project.",
+        "de": "Ein unterhaltsames Beispielspielprojekt.",
+        "fr": "Un projet de jeu exemple amusant.",
+        "es": "Un proyecto de juego de ejemplo divertido.",
+        "pt": "Um projeto de jogo de exemplo divertido.",
+        "ru": "Весёлый пример игрового проекта."
+      },
       "categoryId": "cat2",
       "image": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=340&fit=crop",
       "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
@@ -69,7 +134,16 @@
     }
   ],
   "novaResponses": {
-    "greetings": ["merhaba", "selam", "hey", "hi", "hello", "günaydın", "iyi günler", "iyi akşamlar"],
+    "greetings": [
+      "merhaba",
+      "selam",
+      "hey",
+      "hi",
+      "hello",
+      "günaydın",
+      "iyi günler",
+      "iyi akşamlar"
+    ],
     "replies": {
       "greeting": {
         "tr": "Merhaba! Ben Nova, Mizer Limited asistanıyım. Size nasıl yardımcı olabilirim?",
